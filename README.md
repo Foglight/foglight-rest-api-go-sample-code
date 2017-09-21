@@ -8,5 +8,5 @@
 # Build
 - require go 1.8+ 
 - cd hostmonitor
-- go get
+- go get -d
 - go build
