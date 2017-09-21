@@ -1,9 +1,9 @@
 package rest
 
 import (
+	"flag"
 	"fmt"
 	"os"
-	"flag"
 )
 
 //Config config items
@@ -15,15 +15,15 @@ type Config struct {
 }
 
 //NewConfig Parse arguments and create Config
-func NewConfig() *Config{
-	url:= flag.String("server", "http://localhost:8080", "Fogligt server base url.")
-	token:=flag.String("token", "", "Fogligt REST API token.")
-	interval:=flag.Int("interval", 5, "Agent data collection interval in minutes, should in 1 to 30 minutes.")
-	hostname,_:=os.Hostname()
-	agentName:=flag.String("agent", fmt.Sprintf("%s(pid:%d)",hostname,os.Getpid()),  "Agent name.")
+func NewConfig() *Config {
+	url := flag.String("server", "http://localhost:8080", "Fogligt server base url.")
+	token := flag.String("token", "", "Fogligt REST API token.")
+	interval := flag.Int("interval", 5, "Agent data collection interval in minutes, should in 1 to 30 minutes.")
+	hostname, _ := os.Hostname()
+	agentName := flag.String("agent", fmt.Sprintf("%s(pid:%d)", hostname, os.Getpid()), "Agent name.")
 	flag.Parse()
-	config:=&Config{*url, *token, *interval, *agentName}
-	if !config.validate(){
+	config := &Config{*url, *token, *interval, *agentName}
+	if !config.validate() {
 		Log("Missing required parameters.\n")
 		flag.Usage()
 		os.Exit(1)
@@ -33,7 +33,7 @@ func NewConfig() *Config{
 }
 
 func (c *Config) validate() bool {
-	if c.AuthToken =="" {
+	if c.AuthToken == "" {
 		Log("AuthToken is requird.")
 		return false
 	}

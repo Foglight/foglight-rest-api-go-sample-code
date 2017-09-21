@@ -1,27 +1,25 @@
 package main
 
-import(
+import (
+	"fmt"
 	"github.com/Foglight/foglight-rest-api-go-sample-code/rest"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
+	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/net"
-	"github.com/shirou/gopsutil/host"
 	"time"
-	"fmt"
 )
 
-
-
-func main(){
-	conf:=rest.NewConfig()
-	client:=rest.NewClient(conf)
+func main() {
+	conf := rest.NewConfig()
+	client := rest.NewClient(conf)
 	var lastSubmissionMs uint64
 	for {
-		now:=rest.Now()
-		data:=collect()
-		if lastSubmissionMs <=0{
-			lastSubmissionMs =now - uint64(conf.CollectionIntervalMinutes * 600000)
+		now := rest.Now()
+		data := collect()
+		if lastSubmissionMs <= 0 {
+			lastSubmissionMs = now - uint64(conf.CollectionIntervalMinutes*600000)
 		}
 		client.Submit(data, lastSubmissionMs, now)
 		lastSubmissionMs = now
@@ -29,9 +27,8 @@ func main(){
 	}
 }
 
-
-func collect()*Host{
-	data:= &Host{}
+func collect() *Host {
+	data := &Host{}
 	hostInfo(data)
 	cpuPercent(data)
 	memPercent(data)
@@ -41,7 +38,7 @@ func collect()*Host{
 }
 
 func hostInfo(h *Host) {
-	v, _ :=host.Info()
+	v, _ := host.Info()
 	h.addString("hostname", v.Hostname)
 	h.addString("name", v.Hostname)
 	h.addString("os", fmt.Sprintf("%s - %s(%s)", v.Platform, v.OS, v.KernelVersion))
@@ -61,23 +58,24 @@ func memPercent(h *Host) {
 }
 
 var (
-	lastTime ,lastSent ,lastRecv uint64
+	lastTime, lastSent, lastRecv uint64
 )
+
 func netStat(h *Host) {
 	vs, err := net.IOCounters(false)
 	if err == nil {
 		v := vs[0]
 		currTime := rest.Now()
 		if lastTime == 0 {
-			lastTime ,lastSent ,lastRecv = currTime, v.BytesSent, v.BytesRecv
-			return 
+			lastTime, lastSent, lastRecv = currTime, v.BytesSent, v.BytesRecv
+			return
 		}
-		usedTime:=currTime-lastTime
-		if usedTime>=0{
+		usedTime := currTime - lastTime
+		if usedTime >= 0 {
 			h.addFloat("netSentRate", float64(subAbs(lastSent, v.BytesSent))/float64(usedTime))
 			h.addFloat("netRecvRate", float64(subAbs(lastRecv, v.BytesRecv))/float64(usedTime))
 		}
-		lastTime ,lastSent ,lastRecv = currTime, v.BytesSent, v.BytesRecv
+		lastTime, lastSent, lastRecv = currTime, v.BytesSent, v.BytesRecv
 	}
 }
 func subAbs(a uint64, b uint64) uint64 {
@@ -98,7 +96,7 @@ func diskStat(h *Host) {
 				free += usage.Free
 			}
 		}
-		if total >0 {
+		if total > 0 {
 			h.addFloat("diskTotal", float64(total))
 			h.addFloat("diskFree", float64(free))
 		}

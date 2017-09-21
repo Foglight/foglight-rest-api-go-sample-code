@@ -1,13 +1,13 @@
 package rest
 
 import (
-	"time"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"strings"
-	"net/http"
-	"fmt"
+	"time"
 )
 
 //Topology Interface support data submission
@@ -19,12 +19,12 @@ type Topology interface {
 //Client client for foglight rest api
 type Client struct {
 	config *Config
-	token *string
+	token  *string
 }
 
 //NewClient create a new client
-func NewClient(conf *Config) *Client{
-	client:=&Client{conf, nil}
+func NewClient(conf *Config) *Client {
+	client := &Client{conf, nil}
 	client.Login()
 	return client
 }
@@ -35,7 +35,7 @@ func Now() uint64 {
 }
 
 //Submit submit topology data
-func (c *Client)Submit(data Topology, lastSubmissionMs uint64, now uint64){
+func (c *Client) Submit(data Topology, lastSubmissionMs uint64, now uint64) {
 	tpl := `
 	{
 		"data":[{
@@ -49,7 +49,7 @@ func (c *Client)Submit(data Topology, lastSubmissionMs uint64, now uint64){
 		"agentName": "%s"
 		}
 	`
-	buf:=fmt.Sprintf(tpl, data.Type(), data.ToJson(), lastSubmissionMs, now, c.config.AgentName)
+	buf := fmt.Sprintf(tpl, data.Type(), data.ToJson(), lastSubmissionMs, now, c.config.AgentName)
 	Log("Submit Topology:\n", buf)
 	req, _ := http.NewRequest("POST", c.serverURL("/api/v1/topology/pushData"), strings.NewReader(buf))
 	req.Header.Add("Access-Token", *c.token)
@@ -59,7 +59,7 @@ func (c *Client)Submit(data Topology, lastSubmissionMs uint64, now uint64){
 }
 
 //Login login and get the token
-func  (c *Client) Login() {
+func (c *Client) Login() {
 	form := &url.Values{"authToken": {c.config.AuthToken}}
 	resp, err := http.PostForm(c.serverURL("/api/v1/security/login"), *form)
 	if err != nil {
@@ -79,16 +79,15 @@ func  (c *Client) Login() {
 	logger.Println("login: ", resp.Status, ", access-token=", t)
 }
 
-func (c *Client)serverURL(path string) string {
+func (c *Client) serverURL(path string) string {
 	return fmt.Sprintf("%s%s", c.config.ServerURL, path)
 }
 
 //Logout logout
-func (c *Client)Logout() {
+func (c *Client) Logout() {
 	req, _ := http.NewRequest("GET", c.serverURL("/api/v1/security/logout"), nil)
 	req.Header.Add("Access-Token", *c.token)
 	req.Header.Add("Accept", "application/json")
 	resp, _ := http.DefaultClient.Do(req)
 	logger.Println("logout: ", resp.Status)
 }
-
