@@ -7,6 +7,9 @@ import (
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -14,6 +17,17 @@ func main() {
 	conf := rest.NewConfig()
 	client := rest.NewClient(conf)
 	var lastSubmissionMs uint64
+
+	//capture ctrl-c
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		client.Logout()
+		rest.Log("Exit...")
+		os.Exit(0)
+	}()
+
 	for {
 		now := rest.Now()
 		data := collect()
@@ -38,7 +52,7 @@ func collect() *Host {
 
 func hostInfo(h *Host) {
 	v, _ := host.Info()
-	h.Hostname = v.Hostname
+	h.Hostname = rest.Fqdn()
 	h.HostID = v.HostID
 }
 
@@ -70,9 +84,11 @@ func netStat(h *Host) {
 		}
 		usedTime := currTime - lastTime
 		if usedTime >= 0 {
-			rate := float64(subAbs(lastSent, v.BytesSent)+subAbs(lastRecv, v.BytesRecv)) / float64(usedTime)
+			h.NetSendRate = 8.0 * float64(subAbs(lastSent, v.BytesSent)) / float64(usedTime)
+			h.NetReceiveRate = 8.0 * float64(subAbs(lastRecv, v.BytesRecv)) / float64(usedTime)
+			h.NetTransferRate = h.NetSendRate + h.NetReceiveRate
 			speed := float64(1000 * 1000)
-			h.NetPercent = rate * 800.0 / speed
+			h.NetPercent = h.NetTransferRate * 100.0 / speed
 		}
 		lastTime, lastSent, lastRecv = currTime, v.BytesSent, v.BytesRecv
 	}

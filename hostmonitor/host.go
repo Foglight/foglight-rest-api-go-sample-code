@@ -7,12 +7,15 @@ import (
 
 //Host Host topology object
 type Host struct {
-	Hostname    string
-	HostID      string
-	CPUPercent  float64
-	MemPercent  float64
-	DiskPercent float64
-	NetPercent  float64
+	Hostname        string
+	HostID          string
+	CPUPercent      float64
+	MemPercent      float64
+	DiskPercent     float64
+	NetPercent      float64
+	NetSendRate     float64
+	NetReceiveRate  float64
+	NetTransferRate float64
 }
 
 //ToJSON convert host to json format
@@ -36,7 +39,10 @@ func (c *Host) ToJSON() string {
 		},
 		"network":{
 			"host":{"name":"{{.Hostname}}","hostId":"{{.HostID}}","systemId":"{{.HostID}}"},
-			"utilization": {{.NetPercent}}
+			"utilization": {{.NetPercent}},
+			"sendRate": {{.NetSendRate}},
+			"receiveRate": {{.NetReceiveRate}},
+			"transferRate": {{.NetTransferRate}}
 		}
 	}
  `
