@@ -27,8 +27,8 @@ func main() {
 	}
 }
 
-func collect() *Host {
-	data := &Host{}
+func collect() *rest.SimpleTopology {
+	data := rest.NewSimpleTopology("SimpleHost")
 	hostInfo(data)
 	cpuPercent(data)
 	memPercent(data)
@@ -37,23 +37,23 @@ func collect() *Host {
 	return data
 }
 
-func hostInfo(h *Host) {
+func hostInfo(h *rest.SimpleTopology) {
 	v, _ := host.Info()
-	h.addString("hostname", v.Hostname)
-	h.addString("name", v.Hostname)
-	h.addString("os", fmt.Sprintf("%s - %s(%s)", v.Platform, v.OS, v.KernelVersion))
+	h.AddString("hostname", v.Hostname)
+	h.AddString("name", v.Hostname)
+	h.AddString("os", fmt.Sprintf("%s - %s(%s)", v.Platform, v.OS, v.KernelVersion))
 }
 
-func cpuPercent(h *Host) {
+func cpuPercent(h *rest.SimpleTopology) {
 	values, _ := cpu.Percent(0, false)
 	if values != nil {
-		h.addFloat("cpuPercent", values[0])
+		h.AddFloat("cpuPercent", values[0])
 	}
 }
-func memPercent(h *Host) {
+func memPercent(h *rest.SimpleTopology) {
 	vm, _ := mem.VirtualMemory()
 	if vm != nil {
-		h.addFloat("memPercent", vm.UsedPercent)
+		h.AddFloat("memPercent", vm.UsedPercent)
 	}
 }
 
@@ -61,7 +61,7 @@ var (
 	lastTime, lastSent, lastRecv uint64
 )
 
-func netStat(h *Host) {
+func netStat(h *rest.SimpleTopology) {
 	vs, err := net.IOCounters(false)
 	if err == nil {
 		v := vs[0]
@@ -72,8 +72,8 @@ func netStat(h *Host) {
 		}
 		usedTime := currTime - lastTime
 		if usedTime >= 0 {
-			h.addFloat("netSentRate", float64(subAbs(lastSent, v.BytesSent))/float64(usedTime))
-			h.addFloat("netRecvRate", float64(subAbs(lastRecv, v.BytesRecv))/float64(usedTime))
+			h.AddFloat("netSentRate", float64(subAbs(lastSent, v.BytesSent))/float64(usedTime))
+			h.AddFloat("netRecvRate", float64(subAbs(lastRecv, v.BytesRecv))/float64(usedTime))
 		}
 		lastTime, lastSent, lastRecv = currTime, v.BytesSent, v.BytesRecv
 	}
@@ -85,7 +85,7 @@ func subAbs(a uint64, b uint64) uint64 {
 	return b - a
 }
 
-func diskStat(h *Host) {
+func diskStat(h *rest.SimpleTopology) {
 	var total, free uint64
 	p, err := disk.Partitions(false)
 	if err == nil {
@@ -97,8 +97,8 @@ func diskStat(h *Host) {
 			}
 		}
 		if total > 0 {
-			h.addFloat("diskTotal", float64(total))
-			h.addFloat("diskFree", float64(free))
+			h.AddFloat("diskTotal", float64(total))
+			h.AddFloat("diskFree", float64(free))
 		}
 	}
 }

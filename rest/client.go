@@ -13,7 +13,7 @@ import (
 //Topology Interface support data submission
 type Topology interface {
 	Type() string
-	ToJson() string
+	ToJSON() string
 }
 
 //Client client for foglight rest api
@@ -22,7 +22,7 @@ type Client struct {
 	token  *string
 }
 
-//NewClient create a new client
+//NewClient create a new client and login to get an access token
 func NewClient(conf *Config) *Client {
 	client := &Client{conf, nil}
 	client.Login()
@@ -49,7 +49,7 @@ func (c *Client) Submit(data Topology, lastSubmissionMs uint64, now uint64) {
 		"agentName": "%s"
 		}
 	`
-	buf := fmt.Sprintf(tpl, data.Type(), data.ToJson(), lastSubmissionMs, now, c.config.AgentName)
+	buf := fmt.Sprintf(tpl, data.Type(), data.ToJSON(), lastSubmissionMs, now, c.config.AgentName)
 	Log("Submit Topology:\n", buf)
 	req, _ := http.NewRequest("POST", c.serverURL("/api/v1/topology/pushData"), strings.NewReader(buf))
 	req.Header.Add("Access-Token", *c.token)
