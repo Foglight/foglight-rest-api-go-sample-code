@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/Foglight/foglight-rest-api-go-sample-code/rest"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
@@ -27,8 +26,8 @@ func main() {
 	}
 }
 
-func collect() *rest.SimpleTopology {
-	data := rest.NewSimpleTopology("SimpleHost")
+func collect() *Host {
+	data := &Host{}
 	hostInfo(data)
 	cpuPercent(data)
 	memPercent(data)
@@ -37,23 +36,22 @@ func collect() *rest.SimpleTopology {
 	return data
 }
 
-func hostInfo(h *rest.SimpleTopology) {
+func hostInfo(h *Host) {
 	v, _ := host.Info()
-	h.AddString("hostname", v.Hostname)
-	h.AddString("name", v.Hostname)
-	h.AddString("os", fmt.Sprintf("%s - %s(%s)", v.Platform, v.OS, v.KernelVersion))
+	h.Hostname = v.Hostname
+	h.HostID = v.HostID
 }
 
-func cpuPercent(h *rest.SimpleTopology) {
+func cpuPercent(h *Host) {
 	values, _ := cpu.Percent(0, false)
 	if values != nil {
-		h.AddFloat("cpuPercent", values[0])
+		h.CPUPercent = values[0]
 	}
 }
-func memPercent(h *rest.SimpleTopology) {
+func memPercent(h *Host) {
 	vm, _ := mem.VirtualMemory()
 	if vm != nil {
-		h.AddFloat("memPercent", vm.UsedPercent)
+		h.MemPercent = vm.UsedPercent
 	}
 }
 
@@ -61,7 +59,7 @@ var (
 	lastTime, lastSent, lastRecv uint64
 )
 
-func netStat(h *rest.SimpleTopology) {
+func netStat(h *Host) {
 	vs, err := net.IOCounters(false)
 	if err == nil {
 		v := vs[0]
@@ -72,8 +70,9 @@ func netStat(h *rest.SimpleTopology) {
 		}
 		usedTime := currTime - lastTime
 		if usedTime >= 0 {
-			h.AddFloat("netSentRate", float64(subAbs(lastSent, v.BytesSent))/float64(usedTime))
-			h.AddFloat("netRecvRate", float64(subAbs(lastRecv, v.BytesRecv))/float64(usedTime))
+			rate := float64(subAbs(lastSent, v.BytesSent)+subAbs(lastRecv, v.BytesRecv)) / float64(usedTime)
+			speed := float64(1000 * 1000)
+			h.NetPercent = rate * 800.0 / speed
 		}
 		lastTime, lastSent, lastRecv = currTime, v.BytesSent, v.BytesRecv
 	}
@@ -85,7 +84,7 @@ func subAbs(a uint64, b uint64) uint64 {
 	return b - a
 }
 
-func diskStat(h *rest.SimpleTopology) {
+func diskStat(h *Host) {
 	var total, free uint64
 	p, err := disk.Partitions(false)
 	if err == nil {
@@ -97,8 +96,7 @@ func diskStat(h *rest.SimpleTopology) {
 			}
 		}
 		if total > 0 {
-			h.AddFloat("diskTotal", float64(total))
-			h.AddFloat("diskFree", float64(free))
+			h.DiskPercent = 100.0 * float64(total-free) / float64(total)
 		}
 	}
 }

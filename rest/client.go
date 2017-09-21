@@ -40,9 +40,7 @@ func (c *Client) Submit(data Topology, lastSubmissionMs uint64, now uint64) {
 	{
 		"data":[{
 			"typeName": "%s",
-			"properties": {
-				%s
-			}
+			"properties": %s
 	    }],
 		"startTime": %d,
 		"endTime": %d,
